@@ -1,0 +1,23 @@
+{
+  "name": "discord-recorder",
+  "version": "1.0.1",
+  "description": "This module helps you to record sweet words in Discord VoiceChannel",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "types": "index.d.ts",
+  "directories": {
+    "lib": "./"
+  },
+  "keywords": [],
+  "author": "aiko-chan-ai",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/voice": "^0.9.0",
+    "discord.js": "^13.7.0",
+    "node-crc": "^1.3.2",
+    "path": "^0.12.7",
+    "prism-media": "^2.0.0-alpha.0"
+  }
+}
