@@ -3,7 +3,7 @@
 
 ## Features
 - [X] Record voice (.ogg)
-- [X] Manual pause and resume
+- [ ] Manual pause and resume
 - [ ] ...
 
 ## Dependencies
