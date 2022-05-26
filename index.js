@@ -11,12 +11,22 @@ module.exports = class Recorder {
 		}
 		this.client = client;
 		this.cache = new discord.Collection(); // Collection<guildId, collection<userId, pipeStream>>
+		this.oggStream = new prism.opus.OggLogicalBitstream({
+			opusHead: new prism.opus.OpusHead({
+				channelCount: 2,
+				sampleRate: 48000,
+			}),
+			pageSizeControl: {
+				maxPackets: 10,
+			},
+		});
 	}
 	async record(
 		guildId,
 		userId,
 		folderPath,
 		fileName,
+		writeFile = true,
 		options = {
 			end: {
 				behavior: voice.EndBehaviorType.AfterSilence,
@@ -25,11 +35,13 @@ module.exports = class Recorder {
 		},
 	) {
 		// check folder is exist
-		if (!fs.existsSync(folderPath)) {
+		if (writeFile && !fs.existsSync(folderPath)) {
 			fs.mkdirSync(folderPath);
 			console.log(`${folderPath} is created`);
 		}
-		const w = fs.createWriteStream(`${folderPath}${sep}${fileName}.ogg`);
+		const w = writeFile
+			? fs.createWriteStream(`${folderPath}${sep}${fileName}.ogg`)
+			: null;
 		const connection = await voice.getVoiceConnection(guildId);
 		if (!connection) {
 			throw new Error(`No voice connection found (GuildId:${guildId})`);
@@ -40,35 +52,48 @@ module.exports = class Recorder {
 			30000,
 		);
 		const audio = connection.receiver.subscribe(userId, options);
-		const oggStream = new prism.opus.OggLogicalBitstream({
-			opusHead: new prism.opus.OpusHead({
-				channelCount: 2,
-				sampleRate: 48000,
-			}),
-			pageSizeControl: {
-				maxPackets: 10,
-			},
-		});
-		return new Promise((resolve, reject) => {
-			const stream = audio.pipe(oggStream).pipe(w);
-			stream.once('close', () => {
-				resolve('✅ Recorded file: ' + `${folderPath}${sep}${fileName}.ogg`);
-			}).on('error', (err) => {
-				reject(err);
+		if (w)
+			return new Promise((resolve, reject) => {
+				const stream = audio.pipe(this.oggStream).pipe(w);
+				stream
+					.once('close', () => {
+						resolve(
+							'✅ Recorded file: ' + `${folderPath}${sep}${fileName}.ogg`,
+						);
+					})
+					.on('error', (err) => {
+						reject(err);
+					});
+				const server = this.cache.get(guildId) ?? new discord.Collection();
+				server.set(userId, {
+					audio,
+					stream,
+					writeStream: w,
+					pause: false,
+				});
+				this.cache.set(guildId, server);
 			});
+		else {
 			const server = this.cache.get(guildId) ?? new discord.Collection();
 			server.set(userId, {
 				audio,
-				stream
+				stream: connection,
+				writeStream: null,
+				pause: null,
 			});
 			this.cache.set(guildId, server);
-		});
+			return audio;
+		}
 	}
 	manualDestroy(guildId, userId) {
 		const server = this.cache.get(guildId);
-		if (!server) throw new Error(`No voice connection found (GuildId:${guildId})`);
+		if (!server)
+			throw new Error(`No voice connection found (GuildId:${guildId})`);
 		const stream = server.get(userId);
-		if (!stream) throw new Error(`No voice connection found (GuildId:${guildId}, UserId:${userId})`);
+		if (!stream)
+			throw new Error(
+				`No voice connection found (GuildId:${guildId}, UserId:${userId})`,
+			);
 		stream.stream.destroy();
 		server.delete(userId);
 		this.cache.set(guildId, server);
@@ -76,18 +101,46 @@ module.exports = class Recorder {
 	}
 	manualPause(guildId, userId) {
 		const server = this.cache.get(guildId);
-		if (!server) throw new Error(`No voice connection found (GuildId:${guildId})`);
+		if (!server)
+			throw new Error(`No voice connection found (GuildId:${guildId})`);
 		const stream = server.get(userId);
-		if (!stream) throw new Error(`No voice connection found (GuildId:${guildId}, UserId:${userId})`);
+		if (!stream)
+			throw new Error(
+				`No voice connection found (GuildId:${guildId}, UserId:${userId})`,
+			);
+		if (!stream.writeStream)
+			throw new Error(
+				`No writeStream found (GuildId:${guildId}, UserId:${userId}, Debug: No writeStream file)`,
+			);
+		console.error('[Feature] Pause not working');
+		stream.pause = true;
 		stream.audio.pause();
+		stream.audio.unpipe(stream.writeStream);
+		stream.audio.readableFlowing = false;
+		server.set(userId, stream);
+		this.cache.set(guildId, server);
 		return true;
 	}
 	manualResume(guildId, userId) {
 		const server = this.cache.get(guildId);
-		if (!server) throw new Error(`No voice connection found (GuildId:${guildId})`);
+		if (!server)
+			throw new Error(`No voice connection found (GuildId:${guildId})`);
 		const stream = server.get(userId);
-		if (!stream) throw new Error(`No voice connection found (GuildId:${guildId}, UserId:${userId})`);
+		if (!stream)
+			throw new Error(
+				`No voice connection found (GuildId:${guildId}, UserId:${userId})`,
+			);
+		if (!stream.writeStream)
+			throw new Error(
+				`No writeStream found (GuildId:${guildId}, UserId:${userId}, Debug: No writeStream file)`,
+			);
+		console.error('[Feature] Resume not working');
+		stream.pause = false;
 		stream.audio.resume();
+		stream.audio.pipe(stream.writeStream);
+		stream.audio.readableFlowing = true;
+		server.set(userId, stream);
+		this.cache.set(guildId, server);
 		return true;
 	}
 };

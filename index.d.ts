@@ -1,5 +1,5 @@
 import Discord from 'discord.js';
-import Voice from '@discordjs/voice';
+import Voice, { AudioReceiveStream } from '@discordjs/voice';
 declare class Recorder {
     constructor(client: Discord.Client);
     client: Discord.Client;
@@ -10,10 +10,11 @@ declare class Recorder {
      * @param userId User id to record
      * @param folderPath Folder path to save the file
      * @param fileName File name to save (.ogg)
+     * @param writeFile Write file or not (Get Stream)
      * @param options AudioReceiveStreamOptions
-     * @returns {Promise<string>} Logs
+     * @returns {Promise<string | AudioReceiveStream>} Logs
      */
-    record(guildId: Discord.Snowflake, userId: Discord.Snowflake, folderPath: string, fileName: string, options: Voice.AudioReceiveStreamOptions | null): Promise<string>;
+    record(guildId: Discord.Snowflake, userId: Discord.Snowflake, folderPath: string, fileName: string, writeFile: boolean, options: Voice.AudioReceiveStreamOptions | null): Promise<string>;
     /**
      * Stop recording a user
      * @param guildId Guild Id

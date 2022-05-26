@@ -1,6 +1,6 @@
 {
   "name": "discord-recorder",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "This module helps you to record sweet words in Discord VoiceChannel",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,23 @@
   "directories": {
     "lib": "./"
   },
-  "keywords": [],
+  "keywords": [
+    "discord.js",
+    "discord.js v13",
+    "discord voice",
+    "voice recorder",
+    "bot",
+    "node",
+    "discord"
+  ],
+  "bugs": {
+    "url": "https://github.com/aiko-chan-ai/discord-recorder/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aiko-chan-ai/discord-recorder.git"
+  },
+  "homepage": "https://github.com/aiko-chan-ai/discord-recorder#readme",
   "author": "aiko-chan-ai",
   "license": "ISC",
   "dependencies": {
