@@ -18,10 +18,7 @@ This module helps you to record sweet words in Discord VoiceChannel
 - `prism-media@2.0.0-alpha.0`
 
 ## Using
-
-```sh
-$ npm install discord-recorder
-```
+- it's too buggy, i removed this npm package. If you want, you can fork to use
 
 ```js
 const Recorder = require('discord-recorder');
